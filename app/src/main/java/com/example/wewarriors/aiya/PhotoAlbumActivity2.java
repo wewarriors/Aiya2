@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,6 +48,8 @@ import java.util.List;
 
 public class PhotoAlbumActivity2 extends AppCompatActivity {
 
+    private final static String TAG = "PhotoAlbumActivity2";
+
     private String dateNow;
     private boolean isEdit;
 
@@ -59,6 +62,9 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
     private List<List<String>> mLtAlbum;
     private ArrayList<String> photoList;
     private ArrayList<String> mSelectPath;
+
+    //创建一个集合来记录那些被选中的图片编号  最开始想用新的bean photo 修改数据库时报错  放弃
+    private List<List<Integer>> mSelectedNumber;
 
     private static final int REQUEST_IMAGE = 2;
     protected static final int REQUEST_STORAGE_READ_ACCESS_PERMISSION = 101;
@@ -94,9 +100,19 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 System.out.println(55555);
-                isEdit = true;
+                if(isEdit == false){
+                    clearSelected();
+                    isEdit = true;
+                    mTvPhotoEdit.setText("删除");
+                }else{
+                    //TODO  将选中的图片移除
+                    clearSelected();
+                    isEdit = false;
+                    mTvPhotoEdit.setText("编辑");
+
+                }
+
                 rvAlbumAdapter.notifyDataSetChanged();
-                gridViewAdapter.notifyDataSetChanged();
             }
         });
     }
@@ -104,6 +120,7 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
     private void initData() {
         mLtTime = new ArrayList<>();
         mLtAlbum = new ArrayList<>();
+        mSelectedNumber = new ArrayList<>();
         db = Connector.getDatabase();
         List<ImagePathItem> list;
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -123,6 +140,7 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
                 }
                 mLtTime.add(imagePathItem.getDate());
                 mLtAlbum.add(imagePathItem.getImagePath());
+                mSelectedNumber.add(new ArrayList<Integer>());
                 System.out.println("imagePathItem.getImagePath()" + imagePathItem.getImagePath());
             }
             DataSupport.deleteAll(ImagePathItem.class);
@@ -133,21 +151,37 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
             photoList = new ArrayList<>();
             photoList.add(R.drawable.uploadpic_226x226+"");
             mLtAlbum.add(0,photoList);
+            mSelectedNumber.add(0,new ArrayList<Integer>());
         }else {
             if(!mLtTime.get(0).equals(dateNow)){
                 mLtTime.add(0,dateNow);
                 photoList = new ArrayList<>();
                 photoList.add(R.drawable.uploadpic_226x226+"");
                 mLtAlbum.add(0,photoList);
+                mSelectedNumber.add(0,new ArrayList<Integer>());
             }
         }
     }
 
     @Override
     public void onBackPressed() {
+
+        if(isEdit){
+            isEdit = false;
+            mTvPhotoEdit.setText("编辑");
+            clearSelected();
+            rvAlbumAdapter.notifyDataSetChanged();
+            return;
+        }
+        Log.d(TAG, "onBackPressed: "+mSelectedNumber.get(0).size());
         backToMain();
     }
 
+    private void clearSelected(){
+        for(int i=0;i<mSelectedNumber.size();i++){
+            mSelectedNumber.get(i).clear();
+        }
+    }
     private void backToMain(){
         saveData();
         Intent intent = new Intent(PhotoAlbumActivity2.this,MainActivity.class);
@@ -195,7 +229,7 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
                     String i = R.drawable.uploadpic_226x226+"";
                     String j = mLtAlbum.get(position1).get(position);
                     if(position1==0&&position==mLtAlbum.get(position1).size()-1&&i.equals(j)){
-
+                        clearSelected();
                         isEdit = false;
                         //此时增加图片
                         String choiceMode = "multi";
@@ -204,9 +238,15 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
 
                     }else{
                         //如果isEdit是true，checkmark选中   如果isEdit是false 此时查看大图
+                        ImageView checkmark = (ImageView) view.findViewById(R.id.checkmark);
                         if(isEdit){
-                            ImageView checkmark = (ImageView) view.findViewById(R.id.checkmark);
-                            checkmark.setImageResource(R.drawable.mis_btn_selected);
+                            if(mSelectedNumber.get(position1).contains(position)){
+                                checkmark.setImageResource(R.drawable.mis_btn_unselected);
+                                mSelectedNumber.get(position1).remove(position);
+                            }else{
+                                checkmark.setImageResource(R.drawable.mis_btn_selected);
+                                mSelectedNumber.get(position1).add(position);
+                            }
                             //TODO  
                             System.out.println(77777);
                         }else{
