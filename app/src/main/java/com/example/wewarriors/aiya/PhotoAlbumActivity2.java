@@ -44,6 +44,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 public class PhotoAlbumActivity2 extends AppCompatActivity {
@@ -106,6 +107,31 @@ public class PhotoAlbumActivity2 extends AppCompatActivity {
                     mTvPhotoEdit.setText("删除");
                 }else{
                     //TODO  将选中的图片移除
+                    for(int i=0;i<mLtAlbum.get(0).size();i++){
+                        Log.d(TAG, "onClick: "+mLtAlbum.get(0).get(i));
+                    }
+                    for(int i=0;i<mSelectedNumber.size();i++){
+                        for(int j=0;j<mSelectedNumber.get(i).size();j++){
+                            int position = mSelectedNumber.get(i).get(j);
+                            Log.d(TAG, "position "+position);
+                            Log.d(TAG, "size "+mLtAlbum.get(i).size());
+                            Log.d(TAG, "get(position) "+mLtAlbum.get(i).get(position));
+                            mLtAlbum.get(i).remove(position);
+                            mLtAlbum.get(i).add(position,"");
+                        }
+                    }
+                    for(int i=0;i<mLtAlbum.size();i++){
+                        Iterator<String> it = mLtAlbum.get(i).iterator();
+                        while(it.hasNext()){
+                            String str = it.next();
+                            System.out.println(str);
+                            if(str.equals("")){
+                                it.remove();
+                            }
+                        }
+                    }
+                    Log.d(TAG, "onClick: "+mLtAlbum.get(0).size());
+
                     clearSelected();
                     isEdit = false;
                     mTvPhotoEdit.setText("编辑");
